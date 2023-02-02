@@ -20,4 +20,6 @@ hostname = "beroot"
   config.vm.network "public_network", ip: "192.168.1.200"
   
   config.vm.provision "shell", preserve_order: true, path: "scripts/disable_ipv6.sh"
+  #config.vm.provision "shell", preserve_order: true, path: "scripts/adduser_beroot.sh"
+  config.vm.provision "shell", preserve_order: true, path: "scripts/capabilites_setup.sh"
 end
