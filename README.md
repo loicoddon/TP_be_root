@@ -234,7 +234,7 @@ La vulnérabilité est liée à un problème de traitement de la mémoire, qui p
 
 Pour ce faire, nous aurons besoin de 2 paquets sur le système : ```git``` et ```gcc``` (gcc étant souvent installé par défaut).
 
-Nous utilisons [**ce script**](https://github.com/loicoddon/TP_be_root/scripts/exploit.c) qui nous permet de l'exploiter.
+Nous utilisons [**ce script**](https://github.com/loicoddon/TP_be_root/blob/main/scripts/exploit.c) qui nous permet de l'exploiter.
 Celui ci se trouve dans ce repository, on le récupère : 
 
 ```bash
