@@ -3,10 +3,15 @@
 ### Prérequis pour ce rapport
 
 
-Premièrement dans les exemples ci-dessous l'utilisation du compte utilisateur linux **www-data** sera faite. Cette utilisateur a donc des droits restreints sur la majorité du serveur hormis la partie Web.
+Premièrement dans les exemples ci-dessous l'utilisation du compte utilisateur linux **www-data** sera faite. Cet utilisateur a donc des droits restreints sur la majorité du serveur hormis la partie Web.
 ```bash
 sudo -i <-- Permet de passer root
 sudo -u www-data bash <-- Permet de se connecter sur cet utilisateur
+```
+
+Il nous faut également le contenu de ce repository, pour cela il nous faut installer le paquet ```git```, puis effectuer la commande : 
+```bash
+git clone https://github.com/loicoddon/TP_be_root
 ```
 
 ### Attaque 1 : Erreur de capabilities
@@ -235,18 +240,15 @@ La vulnérabilité est liée à un problème de traitement de la mémoire, qui p
 Pour ce faire, nous aurons besoin de 2 paquets sur le système : ```git``` et ```gcc``` (gcc étant souvent installé par défaut).
 
 Nous utilisons [**ce script**](https://github.com/loicoddon/TP_be_root/blob/main/scripts/exploit.c) qui nous permet de l'exploiter.
-Celui ci se trouve dans ce repository, on le récupère : 
+Celui ci se trouve dans notre repository, dans le sous dossier ```/scripts```
 
-```bash
-git clone https://github.com/loicoddon/TP_be_root
-```
-
-Puis on le compile :
+On le compile :
 
 ```bash
 cd scripts/
 gcc exploit.c -o exploit
 ```
+
 Avant d'exécuter on vérifie avec quel utilisateur nous sommes loggé :
 
 ```bash
