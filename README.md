@@ -267,7 +267,22 @@ whoami && id
 
 Cette fois nous voyons que nous ne sommes plus un utilisateur classique, mais bien root de la machine.
 
+Ce script fonctionne notamment grâce au **dépassement de la mémoire tampon** : cela se produit quand OverlayFS traite de nombreuses requêtes de noms de fichiers.
+Ce qui permet par la suite d'exécuter des commandes non vérifiées par le système.
+
 ### Défense 3 : Erreur de mise à jours
+
+Tous les kernels Linux sous la version ```5.11.7``` sont potentiellement vulnérables à cette attaque. Il est donc urgent de mettre à jour le kernel grâce aux commandes :
+
+```bash
+sudo apt update
+sudo apt upgrade
+sudo apt full-upgrade
+sudo apt autoremove
+sudo apt autoclean
+```
+
+Ainsi, la dernière version disponible va être installé sur le système. Il est important également de se tenir informé des dernières mises à jour des noyaux Linux afin de maintenir un niveau de sécurité sur le SI. 
 
 ### Attaque 4 : Erreur de fichier commenté
 #### **Introduction :**
