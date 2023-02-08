@@ -1,8 +1,13 @@
 # Rapport Be Root
 
-## Synthèse managériale
+### Prérequis pour ce rapport
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit.
+
+Premièrement dans les exemples ci-dessous l'utilisation du compte utilisateur linux **www-data** sera faite. Cette utilisateur a donc des droits restreints sur la majorité du serveur hormis la partie Web.
+```bash
+sudo -i <-- Permet de passer root
+sudo -u www-data bash <-- Permet de se connecter sur cet utilisateur
+```
 
 ### Attaque 1 : Erreur de capabilities
 
@@ -30,12 +35,7 @@ Pour pouvoir exploiter une vulnérabilité basée sur les capabilites de Linux i
 
 Il faut donc que l'administrateur du serveur ait fait une erreur de configuration sur un des binaires pour pouvoir nous en servir.
 
-
 #### **Exploitation de la vulnérabilité :** 
-
-Premièrement dans l'exemple ci-dessous l'utilisation du compte utilisateur linux **www-data** sera faite. Cette utilisateur a donc des droits restreints sur la majorité du serveur hormis la partie Web.
-
-> sudo -u www-data bash | Permet de se connecter sur cet utilisateur
 
 Au préalable de l'exploitation nous allons faire de la reconnaisance. C'est-à-dire chercher des binaires qui ont été modifiés sur le serveur.
 
@@ -223,8 +223,74 @@ En conclusion, ce qui paraît être le meilleur moyen de se protéger de ce type
 
 ### Attaque 3 : Erreur de mise à jours
 
+
+
 ### Défense 3 : Erreur de mise à jours
 
-### Attaque 4 : Erreur de fichier contenant des mots de passes accessibles à tous
+### Attaque 4 : Erreur de fichier commenté
+#### **Introduction :**
 
-### Défense 4 : Erreur de fichier contenant des mots de passes accessibles à tous
+Pour commencer nous allons une nouvelle fois en amont faire de la reconnaissance afin d'avoir un maximum d'information à l'aide de l'utilisateur déjà connecté. (www-data)
+
+Après plusieurs recherches on trouve un service nommé "phpmyadmin"
+
+![](https://i.imgur.com/mTJJJd3.png)
+
+
+#### **Exploitation de la vulnérabilité :**
+Nous avons donc enquêtez sur des erreurs de configurations potentielles, les fichiers de configurations de phpmyadmin se trouvant dans le chemin */etc/phpmyadmin/*
+
+Les fichiers intéressants sont : 
+- apache.conf
+- config.inc.php
+- htpasswd.setup
+
+Après la lecture du code, on s'aperçoit d'une erreur de configuration dans le fichier *config.inc.php* qui nous donne l'information d'un utilisateur base de données se nommant beroot_admin...
+
+```php
+ if (!empty($dbport) || $dbserver != 'localhost') {
+        $cfg['Servers'][$i]['connect_type'] = 'tcp';
+        $cfg['Servers'][$i]['port'] = $dbport;
+    }
+    //$cfg['Servers'][$i]['compress'] = false;
+    /* Select mysqli if your server has it */
+    $cfg['Servers'][$i]['extension'] = 'mysqli';
+    /* Optional: User for advanced features */
+    $cfg['Servers'][$i]['controluser'] = beroot_admin; <-- ICI
+    $cfg['Servers'][$i]['controlpass'] = $dbpass;
+    /* Optional: Advanced phpMyAdmin features */
+```
+De plus, un peu plus loin dans le fichier on peut voir une ligne décommentée très intéressante :
+
+```php
+  /* Uncomment the following to enable logging in to passwordless accounts,
+     * after taking note of the associated security risks. */
+    $cfg['Servers'][$i]['AllowNoPassword'] = TRUE;
+//CONFIGURATION DU SERVEUR EN COURS ENLEVER COMMENTER LA LIGNE CI-DESSUS DES QUE POSSIBLE !!!
+```
+Grâce à cette information on peut en déduire que : 
+- Un utilisateur se nommant **"beroot_admin"** existe
+- Il n'a à première vue aucun mot de passe
+
+Il serait donc possible de se connecter à Phpmyadmin sans mot de passe avec cet utilisateur : 
+
+En allant sur le navigateur avec cette URL : 
+
+```text
+http://192.168.1.200/phpmyadmin
+```
+![](https://i.imgur.com/AhcPrmo.png)
+
+![](https://i.imgur.com/ovtAslb.png)
+
+En allant plus loin on peut voir les droits attribués à cet utilisateur : 
+
+![](https://i.imgur.com/q1thkIw.png)
+
+L'utilisateur beroot_admin est donc administrateur de toutes les bases de données du service MySQL. Un attaquant malveillant peut donc altérer des bases de données en interne afin de possiblement étendre son attaque sur tout le réseau de la société
+
+### Défense 4 : Erreur de fichier commenté
+
+Afin de se protéger de ce type d'erreur humaine il faut absolument faire des rappels à l'aide d'un calendrier pour que l'administrateur de la société supprime cette configuration qui doit être **temporaire**.
+
+On peut aussi fixer une data d'expiration sur l'utilisateur en question pour éviter de le laisser indéfiniement sur le serveur.
