@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "file", source: "./backup/backup.sh", destination: "/tmp/backup.sh"
     config.vm.provision "file", source: "./php/config.inc.php", destination: "/tmp/config.inc.php"
     config.vm.provision "file", source: "./php/script.sql", destination: "/tmp/script.sql"
+    config.vm.provision "file", source: "./scripts/exploit.c", destination: "/tmp/exploit.c"
     config.vm.provision "shell", preserve_order: true, path: "scripts/addconf_phpmyadmin.sh"
     config.vm.provision "shell", preserve_order: true, path: "scripts/add_root_flag.sh"
     config.vm.provision "shell", preserve_order: true, path: "scripts/add_root_flag.sh"
