@@ -222,8 +222,19 @@ crontab -e
 En conclusion, ce qui paraît être le meilleur moyen de se protéger de ce type d'attaque est l'utilisation d'un compte à droits très limités qui pourrait se nommé ***"backup_user"*** permettant uniquement d'exécuter sa tâche de sauvegarde.
 
 ### Attaque 3 : Erreur de mise à jours
+#### **Introduction :**
+La CVE-2021-3493 est une vulnérabilité affectant le module du kernel **OverlayFS** permettant une élévation de privilèges.
+OverlayFS est un système de fichiers qui permet de combiner plusieurs systèmes de fichiers (ou point de montage) en un seul.
 
+Ici, nous allons l'effectuer sur le kernel de version ```3.16.0-30```.
 
+La vulnérabilité est liée à un problème de traitement de la mémoire, qui permet par exemple à un attaquant d'exécuter du code ou des commandes via un utilisateur non root.
+
+#### **Exploitation de la vulnérabilité :**
+
+Pour ce faire, nous aurons besoin de 2 paquets sur le système : ```git``` et ```gcc``` (gcc étant souvent installé par défaut).
+
+Nous utilisons [*ce script*](https://github.com/briskets/CVE-2021-3493)
 
 ### Défense 3 : Erreur de mise à jours
 
